@@ -1,98 +1,179 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  Platform,
+  StyleSheet,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useAuth } from '@/context/AuthContext';
+import { subscribeParcelles, Parcelle } from '@/services/firestoreService';
+import { globalStyles, COLORS, SPACING, FONT, RADIUS } from '@/constants/styles';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+export default function ParcellesScreen() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [parcelles, setParcelles] = useState<Parcelle[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default function HomeScreen() {
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = subscribeParcelles(user.uid, (items) => {
+      setParcelles(items);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  const renderParcelle = ({ item }: { item: Parcelle }) => (
+    <TouchableOpacity
+      style={styles.parcelCard}
+      onPress={() => router.push(`/parcelle/${item.id}` as any)}
+      activeOpacity={0.7}
+    >
+      <View style={globalStyles.rowBetween}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.parcelName}>{item.nom}</Text>
+          {item.location ? (
+            <Text style={styles.parcelLocation}>📍 {item.location}</Text>
+          ) : null}
+        </View>
+        <View style={styles.surfaceBadge}>
+          <Text style={styles.surfaceValue}>{item.surface}</Text>
+          <Text style={styles.surfaceUnit}>ha</Text>
+        </View>
+      </View>
+
+      {/* Cultures chips */}
+      {item.cultures && item.cultures.length > 0 && (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: SPACING.md }}>
+          {item.cultures.map((c, i) => (
+            <View key={i} style={globalStyles.chip}>
+              <Text style={globalStyles.chipText}>{c}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Bottom row */}
+      {item.periodeRecolte ? (
+        <View style={styles.periodRow}>
+          <Text style={styles.periodText}>📅 {item.periodeRecolte}</Text>
+        </View>
+      ) : null}
+    </TouchableOpacity>
+  );
+
+  if (loading) {
+    return (
+      <View style={globalStyles.centerContent}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
-
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={globalStyles.container}>
+      <FlatList
+        data={parcelles}
+        keyExtractor={(item) => item.id!}
+        renderItem={renderParcelle}
+        contentContainerStyle={{ padding: SPACING.xl, paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          parcelles.length > 0 ? (
+            <Text style={styles.listCount}>
+              {parcelles.length} parcel{parcelles.length !== 1 ? 's' : ''}
+            </Text>
+          ) : null
+        }
+        ListEmptyComponent={
+          <View style={globalStyles.emptyContainer}>
+            <Text style={globalStyles.emptyIcon}>🌱</Text>
+            <Text style={globalStyles.emptyTitle}>No parcels yet</Text>
+            <Text style={globalStyles.emptySubtitle}>
+              Tap the + button below to add your first parcel
+            </Text>
+          </View>
+        }
+      />
+      <TouchableOpacity
+        style={globalStyles.fab}
+        onPress={() => router.push('/parcelle/add' as any)}
+        activeOpacity={0.8}
+      >
+        <Text style={{ color: COLORS.white, fontSize: 28, lineHeight: 30 }}>+</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  listCount: {
+    fontSize: FONT.sm,
+    color: COLORS.textMuted,
+    fontWeight: '500',
+    marginBottom: SPACING.md,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  parcelCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    marginBottom: SPACING.md,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.shadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+      },
+      android: { elevation: 2 },
+    }),
+  },
+  parcelName: {
+    fontSize: FONT.body,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  parcelLocation: {
+    fontSize: FONT.sm,
+    color: COLORS.textMuted,
+    marginTop: 2,
+  },
+  surfaceBadge: {
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
     alignItems: 'center',
-    gap: 8,
+    marginLeft: SPACING.md,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  surfaceValue: {
+    fontSize: FONT.xl,
+    fontWeight: '800',
+    color: COLORS.primaryDark,
+    lineHeight: 24,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  surfaceUnit: {
+    fontSize: FONT.xs,
+    fontWeight: '600',
+    color: COLORS.primaryDark,
+    opacity: 0.7,
+  },
+  periodRow: {
+    marginTop: SPACING.md,
+    paddingTop: SPACING.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: COLORS.borderLight,
+  },
+  periodText: {
+    fontSize: FONT.sm,
+    color: COLORS.textMuted,
   },
 });

@@ -1,33 +1,82 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Platform, Text, View } from 'react-native';
+import { COLORS, FONT, SPACING } from '@/constants/styles';
+import {
+  House,
+  GridFour,
+  ChartBar,
+  UserCircle,
+} from 'phosphor-react-native';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.textMuted,
+        headerTitleAlign: 'center',
+        headerShadowVisible: false,
+        headerStyle: { backgroundColor: COLORS.background },
+        headerTitleStyle: { fontWeight: '700', fontSize: FONT.xl },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '700',
+          marginBottom: Platform.OS === 'ios' ? 0 : 4,
+          letterSpacing: 0.5,
+          textTransform: 'uppercase',
+        },
+        tabBarStyle: {
+          borderTopWidth: 0,
+          backgroundColor: COLORS.white,
+          height: Platform.OS === 'ios' ? 88 : 64,
+          paddingTop: 6,
+          ...Platform.select({
+            ios: {
+              shadowColor: COLORS.shadow,
+              shadowOffset: { width: 0, height: -2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 12,
+            },
+            android: { elevation: 8 },
+          }),
+        },
       }}>
       <Tabs.Screen
-        name="index"
+        name="dashboard"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => (
+            <House size={24} color={color} weight={focused ? 'fill' : 'regular'} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="index"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Plots',
+          tabBarIcon: ({ color, focused }) => (
+            <GridFour size={24} color={color} weight={focused ? 'fill' : 'regular'} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          title: 'Analytics',
+          tabBarIcon: ({ color, focused }) => (
+            <ChartBar size={24} color={color} weight={focused ? 'fill' : 'regular'} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, focused }) => (
+            <UserCircle size={24} color={color} weight={focused ? 'fill' : 'regular'} />
+          ),
         }}
       />
     </Tabs>
