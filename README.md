@@ -1,109 +1,109 @@
 # 🌾 RecolteCheck
 
-تطبيق بسيط لتتبع المحاصيل الزراعية — يشتغل على Android و iOS مع مزامنة سحابية عبر Firebase.
+Une application simple pour le suivi des récoltes agricoles — fonctionne sur Android et iOS avec une synchronisation cloud via Firebase.
 
 ---
 
-## A) الشاشات المطلوبة (9 شاشات فقط)
+## A) Écrans requis (9 écrans)
 
-| # | الشاشة | المسار | الوصف |
+| # | Écran | Chemin | Description |
 |---|--------|--------|-------|
-| 1 | تسجيل الدخول | `(auth)/login` | إدخال البريد + كلمة المرور |
-| 2 | إنشاء حساب | `(auth)/register` | تسجيل فلاح جديد (اسم، هاتف، إيميل، كلمة مرور) |
-| 3 | قائمة القطع الأرضية | `(tabs)/index` | الصفحة الرئيسية — عرض جميع القطع + زر إضافة |
-| 4 | الملف الشخصي | `(tabs)/profile` | عرض وتعديل البيانات الشخصية + تسجيل الخروج |
-| 5 | إضافة قطعة أرضية | `parcelle/add` | نموذج إدخال: اسم، مساحة، زراعات، فترة الحصاد |
-| 6 | تفاصيل القطعة | `parcelle/[id]` | عرض معلومات القطعة + قائمة المناطق + تعديل/حذف |
-| 7 | تعديل القطعة | `parcelle/edit/[id]` | تعديل بيانات القطعة |
-| 8 | إضافة منطقة | `zone/add` | إضافة منطقة داخل قطعة (اسم + مساحة) |
-| 9 | تفاصيل المنطقة | `zone/[id]` | عرض المنطقة + سجل المحاصيل + زر إضافة محصول |
-| 10 | إضافة محصول | `recolte/add` | تسجيل محصول جديد (نوع، وزن، ملاحظات) |
+| 1 | Connexion | `(auth)/login` | Saisie Email + Mot de passe |
+| 2 | Inscription | `(auth)/register` | Enregistrement d'un nouvel agriculteur (Nom, Tél, Email, MDP) |
+| 3 | Liste des Parcelles | `(tabs)/index` | Page d'accueil — Affichage de toutes les parcelles + bouton d'ajout |
+| 4 | Profil | `(tabs)/profile` | Consultation et modification des données personnelles + Déconnexion |
+| 5 | Ajouter une Parcelle | `parcelle/add` | Formulaire : Nom, Surface, Cultures, Période de récolte |
+| 6 | Détails de la Parcelle| `parcelle/[id]` | Infos de la parcelle + liste des zones + modification/suppression |
+| 7 | Modifier la Parcelle | `parcelle/edit/[id]` | Modification des données de la parcelle |
+| 8 | Ajouter une Zone | `zone/add` | Ajout d'une zone dans une parcelle (Nom + Surface) |
+| 9 | Détails de la Zone | `zone/[id]` | Affichage de la zone + historique des récoltes + bouton ajout récolte |
+| 10| Ajouter une Récolte | `recolte/add` | Enregistrement d'une récolte (Type, Poids, Notes) |
 
 ---
 
-## B) نموذج بيانات Firestore
+## B) Modèle de données Firestore
 
 ```
 users/{userId}
-├── nom: string              // الاسم العائلي
-├── prenom: string           // الاسم الشخصي
-├── telephone: string        // رقم الهاتف
-├── email: string            // البريد الإلكتروني
+├── nom: string              // Nom de famille
+├── prenom: string           // Prénom
+├── telephone: string        // Numéro de téléphone
+├── email: string            // Email
 ├── createdAt: timestamp
 │
 └── parcelles/{parcelleId}
-    ├── nom: string              // اسم القطعة
-    ├── surface: number          // المساحة بالهكتار
-    ├── cultures: string[]       // قائمة الزراعات
-    ├── periodeRecolte: string   // فترة الحصاد
+    ├── nom: string              // Nom de la parcelle
+    ├── surface: number          // Surface en hectares
+    ├── cultures: string[]       // Liste des types de cultures
+    ├── periodeRecolte: string   // Période de récolte estimée
     ├── createdAt: timestamp
     │
     └── zones/{zoneId}
-        ├── nom: string          // اسم المنطقة
-        ├── surface: number      // مساحة المنطقة
+        ├── nom: string          // Nom de la zone
+        ├── surface: number      // Surface de la zone
         ├── createdAt: timestamp
         │
         └── recoltes/{recolteId}
-            ├── culture: string      // نوع المحصول
-            ├── poids: number        // الوزن بالكيلوغرام
-            ├── date: timestamp      // تاريخ الحصاد
-            ├── notes: string        // ملاحظات
-            └── createdAt: timestamp
+            ├── culture: string      // Type de culture récoltée
+            ├── poids: number        // Poids en kilogrammes
+            ├── date: timestamp      // Date de la récolte
+            ├── notes: string        // Notes/Remarques
+            ├── createdAt: timestamp
 ```
 
-**العلاقات:**
-- `parcelles` → مجموعة فرعية داخل `users/{userId}`
-- `zones` → مجموعة فرعية داخل `parcelles/{parcelleId}`
-- `recoltes` → مجموعة فرعية داخل `zones/{zoneId}`
-- كل البيانات مرتبطة بالفلاح عبر `userId`
+**Relations :**
+- `parcelles` → Sous-collection dans `users/{userId}`
+- `zones` → Sous-collection dans `parcelles/{parcelleId}`
+- `recoltes` → Sous-collection dans `zones/{zoneId}`
+- Toutes les données sont liées à l'agriculteur via son `userId`.
 
 ---
 
-## C) إعداد Firebase Auth
+## C) Configuration Firebase Auth
 
-1. **إنشاء مشروع Firebase:**
-   - اذهب إلى [Firebase Console](https://console.firebase.google.com)
-   - أنشئ مشروع جديد باسم `RecolteCheck`
+1. **Création du projet Firebase :**
+   - Allez sur la [Firebase Console](https://console.firebase.google.com)
+   - Créez un nouveau projet nommé `RecolteCheck`
 
-2. **تفعيل Authentication:**
-   - في القائمة الجانبية: `Build` → `Authentication`
-   - اضغط `Get Started`
-   - فعّل `Email/Password` كطريقة تسجيل دخول
+2. **Activer l'Authentication :**
+   - Menu latéral : `Build` → `Authentication`
+   - Cliquez sur `Get Started`
+   - Activez la méthode `Email/Password`
 
-3. **إضافة تطبيق Android:**
-   - في إعدادات المشروع → `Add app` → Android
-   - اسم الحزمة: `com.recoltecheck.app`
-   - حمّل `google-services.json` وضعه في `android/app/`
+3. **Ajouter l'application Android :**
+   - Paramètres du projet → `Add app` → Android
+   - Nom du package : `com.recoltecheck.app`
+   - Téléchargez `google-services.json` et placez-le dans `android/app/`
 
-4. **إضافة تطبيق iOS:**
-   - في إعدادات المشروع → `Add app` → iOS
-   - Bundle ID: `com.recoltecheck.app`
-   - حمّل `GoogleService-Info.plist` وضعه في `ios/`
+4. **Ajouter l'application iOS :**
+   - Paramètres du projet → `Add app` → iOS
+   - Bundle ID : `com.recoltecheck.app`
+   - Téléchargez `GoogleService-Info.plist` et placez-le dans `ios/`
 
-5. **تفعيل Firestore:**
-   - في القائمة: `Build` → `Firestore Database`
-   - اضغط `Create database`
-   - اختر الموقع الأقرب (`europe-west1` مثلاً)
-   - ابدأ في وضع Production
+5. **Activer Firestore :**
+   - Menu : `Build` → `Firestore Database`
+   - Cliquez sur `Create database`
+   - Choisissez l'emplacement le plus proche (ex: `europe-west1`)
+   - Démarrez en mode Production
 
-6. **نشر قواعد الأمان:**
-   - انسخ محتوى `firestore.rules` وألصقه في Firestore → Rules
+6. **Déployer les règles de sécurité :**
+   - Copiez le contenu de `firestore.rules` et collez-le dans l'onglet Firestore → Rules
 
 ---
 
-## D) قواعد أمان Firestore
+## D) Règles de sécurité Firestore
 
-الملف: `firestore.rules`
+Fichier : `firestore.rules`
 
 ```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // كل فلاح يقدر يوصل غير للبيانات ديالو
+    // Chaque agriculteur n'accède qu'à ses propres données
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    // منع الوصول لأي مسار آخر
+    // Interdire l'accès à tout autre chemin
     match /{document=**} {
       allow read, write: if false;
     }
@@ -111,64 +111,64 @@ service cloud.firestore {
 }
 ```
 
-**الشرح:**
-- `request.auth != null` → لازم يكون المستخدم مسجل دخوله
-- `request.auth.uid == userId` → المستخدم يقدر يوصل غير للبيانات ديالو
-- `{document=**}` → القاعدة تطبق على كل المجموعات الفرعية (parcelles, zones, recoltes)
+**Explication :**
+- `request.auth != null` → L'utilisateur doit être authentifié.
+- `request.auth.uid == userId` → L'utilisateur ne peut accéder qu'aux documents sous son UID.
+- `{document=**}` → La règle s'applique en cascade à toutes les sous-collections (parcelles, zones, récoltes).
 
 ---
 
-## E) خطة التنفيذ (Milestones)
+## E) Plan d'exécution (Milestones)
 
-### المرحلة 1: المصادقة (Auth) ✅
-- إعداد Firebase في المشروع (تثبيت `@react-native-firebase/*`)
-- إضافة `AuthContext` لإدارة حالة المصادقة
-- شاشة تسجيل الدخول (`login.tsx`)
-- شاشة إنشاء الحساب (`register.tsx`)
-- توجيه تلقائي بين Auth و Tabs حسب حالة المستخدم
+### Étape 1 : Authentification (Auth) ✅
+- Configuration Firebase dans le projet (install `@react-native-firebase/*`)
+- Ajout de `AuthContext` pour la gestion d'état
+- Écran de connexion (`login.tsx`)
+- Écran d'inscription (`register.tsx`)
+- Redirection automatique entre Auth et Tabs selon l'état de l'utilisateur
 
-### المرحلة 2: الملف الشخصي (Profile CRUD) ✅
-- شاشة الملف الشخصي (`profile.tsx`)
-- قراءة بيانات المستخدم من Firestore
-- تعديل وحفظ البيانات الشخصية
-- زر تسجيل الخروج
+### Étape 2 : Profil Utilisateur (Profil CRUD) ✅
+- Écran de profil (`profile.tsx`)
+- Lecture des données utilisateur depuis Firestore
+- Modification et sauvegarde des informations personnelles
+- Bouton de déconnexion
 
-### المرحلة 3: القطع الأرضية (Parcelles CRUD) ✅
-- قائمة القطع الأرضية في الصفحة الرئيسية
-- شاشة إضافة قطعة (`parcelle/add.tsx`)
-- شاشة تفاصيل القطعة (`parcelle/[id].tsx`)
-- شاشة تعديل القطعة (`parcelle/edit/[id].tsx`)
-- حذف القطعة
-- الاستماع للتغييرات في الوقت الحقيقي (real-time sync)
+### Étape 3 : Gestion des Parcelles (Parcelles CRUD) ✅
+- Liste des parcelles sur la page d'accueil
+- Écran d'ajout de parcelle (`parcelle/add.tsx`)
+- Écran de détails de la parcelle (`parcelle/[id].tsx`)
+- Écran de modification (`parcelle/edit/[id].tsx`)
+- Suppression de parcelle
+- Écoute des changements en temps réel (real-time sync)
 
-### المرحلة 4: الزراعات لكل قطعة (Cultures) ✅
-- حقل `cultures: string[]` في القطعة
-- إدخال الزراعات كقائمة مفصولة بفاصلة
-- عرض الزراعات كشارات (chips) في قائمة القطع وتفاصيلها
+### Étape 4 : Types de Cultures par Parcelle ✅
+- Champ `cultures: string[]` dans la parcelle
+- Saisie des cultures via une liste séparée par des virgules
+- Affichage des cultures sous forme de badges (chips)
 
-### المرحلة 5: المناطق لكل قطعة (Zones) ✅
-- قائمة المناطق داخل شاشة تفاصيل القطعة
-- شاشة إضافة منطقة (`zone/add.tsx`)
-- حذف المنطقة
-- المزامنة في الوقت الحقيقي
+### Étape 5 : Zones par Parcelle (Zones) ✅
+- Liste des zones dans l'écran de détails de la parcelle
+- Écran d'ajout de zone (`zone/add.tsx`)
+- Suppression de zone
+- Synchronisation en temps réel
 
-### المرحلة 6: المحاصيل لكل منطقة مع السجل (Récoltes + History) ✅
-- شاشة تفاصيل المنطقة (`zone/[id].tsx`) مع سجل المحاصيل
-- شاشة إضافة محصول (`recolte/add.tsx`)
-- حذف المحصول
-- عرض إجمالي الإنتاج لكل منطقة
-- ترتيب حسب التاريخ (الأحدث أولاً)
+### Étape 6 : Récoltes par Zone (Récoltes + Historique) ✅
+- Écran de détails de la zone (`zone/[id].tsx`) avec historique
+- Écran d'ajout de récolte (`recolte/add.tsx`)
+- Suppression de récolte
+- Affichage de la production totale par zone
+- Tri par date (la plus récente en premier)
 
-### المرحلة 7: المزامنة السحابية (Cloud Sync) ✅
-- جميع البيانات تُخزن في Firestore تلقائياً
-- استخدام `onSnapshot` للمزامنة اللحظية
-- البيانات متاحة على أي جهاز بعد تسجيل الدخول
+### Étape 7 : Synchronisation Cloud ✅
+- Stockage automatique de toutes les données dans Firestore
+- Utilisation de `onSnapshot` pour la mise à jour instantanée
+- Données accessibles sur n'importe quel appareil après connexion
 
 ---
 
-## F) مقتطفات توضيحية
+## F) Extraits de code
 
-### مثال: الاستماع للتغييرات في الوقت الحقيقي
+### Exemple : Écoute en temps réel
 ```typescript
 // services/firestoreService.ts
 export function subscribeParcelles(userId: string, callback: (parcelles: Parcelle[]) => void) {
@@ -182,7 +182,7 @@ export function subscribeParcelles(userId: string, callback: (parcelles: Parcell
 }
 ```
 
-### مثال: التحقق من المصادقة والتوجيه التلقائي
+### Exemple : Vérification Auth et Routage
 ```typescript
 // app/_layout.tsx
 useEffect(() => {
@@ -198,49 +198,49 @@ useEffect(() => {
 
 ---
 
-## التشغيل
+## Lancement
 
 ```bash
-# تثبيت الحزم
+# Installation des dépendances
 npm install
 
-# تشغيل على Android
+# Lancement sur Android
 npx expo run:android
 
-# تشغيل على iOS
+# Lancement sur iOS
 npx expo run:ios
 ```
 
-> **ملاحظة:** يجب وضع `google-services.json` في `android/app/` و `GoogleService-Info.plist` في `ios/` قبل التشغيل.
+> **Note :** Vous devez placer `google-services.json` dans `android/app/` et `GoogleService-Info.plist` dans `ios/` avant de lancer l'application.
 
 ---
 
-## الافتراضات (Assumptions)
+## Hypothèses (Assumptions)
 
-1. **طريقة المصادقة:** البريد الإلكتروني + كلمة المرور فقط (أبسط طريقة)
-2. **وزن المحاصيل:** بالكيلوغرام (كغ) كوحدة واحدة
-3. **المساحة:** بالهكتار كوحدة واحدة
-4. **تاريخ المحصول:** يُسجل تلقائياً عند الإضافة (التاريخ الحالي)
-5. **الزراعات (cultures):** تُدخل كنص مفصول بفاصلة (أبسط من قائمة ديناميكية)
-6. **اللغة:** الواجهة بالعربية (MSA مع بعض الدارجة في التعليقات)
+1. **Méthode d'Auth :** Email + Mot de passe uniquement (plus simple).
+2. **Poids des récoltes :** En kilogrammes (kg) comme unité par défaut.
+3. **Surface :** En hectares (ha) comme unité par défaut.
+4. **Date de récolte :** Enregistrée automatiquement à l'ajout (date actuelle).
+5. **Cultures :** Saisies sous forme de texte séparé par des virgules.
+6. **Langue :** Interface prévue en arabe/français.
 
 ---
 
-## التحقق من المتطلبات (Verification Against Requirements)
+## Vérification des Besoins (Verification Against Requirements)
 
-| # | المتطلب | الحالة | الموقع |
+| # | Besoin | État | Emplacement |
 |---|---------|--------|--------|
-| 1 | المصادقة عبر Firebase Auth | ✅ | `context/AuthContext.tsx` + `app/(auth)/login.tsx` + `app/(auth)/register.tsx` |
-| 2 | نوع ملف شخصي واحد: "فلاح" | ✅ | لا يوجد نظام أدوار — كل مستخدم هو فلاح تلقائياً |
-| 3 | إدارة المعلومات الشخصية | ✅ | `app/(tabs)/profile.tsx` + `services/firestoreService.ts` (getUserProfile, saveUserProfile) |
-| 4 | إدارة القطع الأرضية (مساحة، زراعات، فترة حصاد، أوزان) | ✅ | `app/parcelle/*` + `services/firestoreService.ts` (Parcelle CRUD) — الأوزان تُسجل في المحاصيل لكل منطقة |
-| 5 | تتبع المحاصيل بالمناطق + سجل | ✅ | `app/zone/[id].tsx` + `app/recolte/add.tsx` + `services/firestoreService.ts` (subscribeRecoltes) |
-| 6 | مزامنة البيانات عبر السحابة | ✅ | Firestore `onSnapshot` في جميع الشاشات — المزامنة لحظية |
-| 7 | يعمل على Android و iOS | ✅ | React Native + Expo + `@react-native-firebase/*` — منصة واحدة لكلا النظامين |
+| 1 | Authentification via Firebase Auth | ✅ | `context/AuthContext.tsx` + `app/(auth)/*` |
+| 2 | Un seul type de profil : "Agriculteur" | ✅ | Pas de système de rôles — chaque utilisateur est agriculteur |
+| 3 | Gestion des infos personnelles | ✅ | `app/(tabs)/profile.tsx` + `services/firestoreService.ts` |
+| 4 | Gestion des parcelles (surface, cultures, période) | ✅ | `app/parcelle/*` + `services/firestoreService.ts` |
+| 5 | Suivi des récoltes par zone + historique | ✅ | `app/zone/[id].tsx` + `app/recolte/add.tsx` |
+| 6 | Synchronisation Cloud | ✅ | Firestore `onSnapshot` globalement |
+| 7 | Compatible Android et iOS | ✅ | React Native + Expo |
 
 ---
 
-## Stack التقني
+## Stack Technique
 
 - **React Native** (Expo SDK 54) + **Expo Router** v6
 - **Firebase Auth** (Email/Password)
